@@ -1,0 +1,56 @@
+version: "3"
+
+tasks:
+    build.cli:
+        desc: Build the app
+        cmds:
+        - GOFLAGS=-mod=mod go build -o bin/urls-checker-cli main.go 
+
+    build.api:
+        desc: Build the app
+        cmds:
+        - GOFLAGS=-mod=mod go build -o bin/urls-checker-api internal/main.go 
+
+    deps:
+        desc: install deps
+        cmds: 
+        - go get -u golang.org/x/lint/golint
+        - go get  -u github.com/fzipp/gocyclo/cmd/gocyclo
+        - go get -u github.com/remyoudompheng/go-misc/deadcode
+        - go get -u github.com/client9/misspell/cmd/misspell
+
+    run: 
+        desc: Run the app
+        cmds:
+        - GOFLAGS=-mod=mod go run main.go
+        - GOFLAGS=-mod=mod go run internal/main.go
+        
+    run.cli: 
+        desc: Run the CLI app
+        cmds:
+        - GOFLAGS=-mod=mod go run main.go
+
+    run.api: 
+        desc: Run the API app
+        cmds:
+        - GOFLAGS=-mod=mod go run internal/main.go
+
+    swagger.gen:
+        desc: Generate Go code
+        cmds:
+        - GOFLAGS=-mod=mod go generate github.com/rawdaGastan/urls_checker/internal github.com/rawdaGastan/urls_checker/pkg/swagger
+
+    swagger.validate:
+        desc: Validate swagger
+        cmds:
+        - swagger validate pkg/swagger/swagger.yml
+
+    swagger.doc:
+        desc: Doc for swagger
+        cmds:
+        - docker run -i yousan/swagger-yaml-to-html < pkg/swagger/swagger.yml > doc/index.html
+
+    clean:
+        desc: Remove all bin data files
+        cmds:
+        - rm ./bin/data -rf
