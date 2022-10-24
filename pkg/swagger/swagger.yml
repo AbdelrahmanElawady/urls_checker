@@ -11,7 +11,7 @@ schemes:
 swagger: "2.0"
 
 paths:
-  /check/{website}:
+  /site/{website}/report:
     get:
       description: Returns the status of links inside the website!
       parameters:
@@ -34,8 +34,6 @@ definitions:
   UrlStatus:
     type: object
     properties:
-      index:
-        type: integer
       url:
         type: string
       err:

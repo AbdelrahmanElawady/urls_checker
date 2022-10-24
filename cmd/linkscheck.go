@@ -65,7 +65,7 @@ var linkscheckCmd = &cobra.Command{
 
 		var sites map[string]interface{} = viper.GetStringMap("sites")
 
-		if sites == nil {
+		if len(sites) == 0 {
 			fmt.Println("error: no sites provided")
 			return
 		}

@@ -5,29 +5,26 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/fatih/color"
 	"golang.org/x/net/html"
 )
 
-const (
-	SuccessColor = "\033[1;32m%s\033[0m"
-	ErrorColor   = "\033[1;31m%s\033[0m"
-	DebugColor   = "\033[0;36m%s\033[0m"
+var (
+	DebugColor   = color.New(color.FgBlue)
+	SuccessColor = color.New(color.FgGreen)
+	ErrorColor   = color.New(color.FgRed)
 )
 
 /*type URLStatus struct {
 	url    string
 	err    string
 	status int
-	index  int
 }*/
 
 type URLStatus struct {
 
 	// err
 	Err string `json:"err,omitempty"`
-
-	// index
-	Index int64 `json:"index,omitempty"`
 
 	// status
 	Status int64 `json:"status,omitempty"`
@@ -36,16 +33,12 @@ type URLStatus struct {
 	URL string `json:"url,omitempty"`
 }
 
-func checkWebsite(website string) (string, error) {
-	var err error
-	websiteTries := [3]string{website, "https://" + website, "http://" + website}
-	for _, web := range websiteTries {
-		_, err = http.Get(web)
-		if err == nil {
-			website = web
-		}
+func checkWebsite(website string) string {
+	if !strings.HasPrefix(website, "https://") {
+		website = "https://" + website
 	}
-	return website, err
+
+	return website
 }
 
 // get links inside a given website
@@ -97,7 +90,7 @@ func GetLinks(website string) ([]string, error) {
 func TestLink(website, url string) (int, error) {
 	if strings.HasPrefix(url, "/") {
 		url = website + url
-	} else if !strings.HasPrefix(url, "http") {
+	} else if !strings.HasPrefix(url, "https://") {
 		url = website + "/" + url
 	}
 
@@ -110,22 +103,17 @@ func TestLink(website, url string) (int, error) {
 
 // Checks the urls of a website
 func Check(website string) ([]URLStatus, error) {
-	fmt.Printf(DebugColor, "start checking: "+website)
-	fmt.Println("")
+	DebugColor.Println("start checking: ", website)
 
 	linksStatus := []URLStatus{}
 
-	website, err := checkWebsite(website)
-	if err != nil {
-		return linksStatus, err
-	}
+	website = checkWebsite(website)
 
 	links, err := GetLinks(website)
 	if err != nil {
 		return linksStatus, err
 	}
-	fmt.Printf(DebugColor, "len(links):: "+fmt.Sprint(len(links)))
-	fmt.Println("")
+	DebugColor.Println("len(links): ", fmt.Sprint(len(links)))
 
 	results := make(chan URLStatus)
 
@@ -136,28 +124,24 @@ func Check(website string) ([]URLStatus, error) {
 			url := links[index]
 			var status int
 			status, err = TestLink(website, url)
-			results <- URLStatus{fmt.Sprint(err), int64(index), int64(status), url}
+			results <- URLStatus{fmt.Sprint(err), int64(status), url}
 		}(j)
 	}
 
-	fmt.Printf(DebugColor, "Waiting..")
-	fmt.Println("")
+	DebugColor.Println("Waiting..")
 
 	for j := 0; j < len(links)-1; j++ {
 		r := <-results
 		linksStatus = append(linksStatus, r)
-		if r.Err != "" || r.Status >= 400 {
-			fmt.Printf(ErrorColor, r.URL+": "+fmt.Sprint(r.Status))
-			fmt.Println("")
-			fmt.Printf(ErrorColor, "error: "+fmt.Sprint(r.Err))
+		if r.Err != fmt.Sprint(nil) || r.Status >= 400 {
+			ErrorColor.Println(r.URL, ": ", fmt.Sprint(r.Status))
+			ErrorColor.Println("error: ", fmt.Sprint(r.Err))
 		} else {
-			fmt.Printf(SuccessColor, r.URL+": "+fmt.Sprint(r.Status))
+			SuccessColor.Println(r.URL, ": ", fmt.Sprint(r.Status))
 		}
-		fmt.Println("")
 	}
 
-	fmt.Printf(DebugColor, "Finished..")
-	fmt.Println("")
+	DebugColor.Println("Finished..")
 	return linksStatus, nil
 }
 
