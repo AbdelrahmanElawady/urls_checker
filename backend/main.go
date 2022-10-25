@@ -1,4 +1,4 @@
-package pkg
+package main
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-openapi/loads"
 	"github.com/go-openapi/runtime/middleware"
+	"github.com/rawdaGastan/urls_checker/pkg"
 	"github.com/rawdaGastan/urls_checker/pkg/swagger/server/models"
 	"github.com/rawdaGastan/urls_checker/pkg/swagger/server/restapi"
 
@@ -43,7 +44,7 @@ func main() {
 //CheckWebsite route returns status of the urls of a website
 func CheckWebsite(params operations.GetSiteWebsiteReportParams) middleware.Responder {
 
-	err := Check(params.Website)
+	err := pkg.Check(params.Website)
 	if err != nil {
 		fmt.Printf("checking links of %v failed with error: %v\n", params.Website, err)
 	}

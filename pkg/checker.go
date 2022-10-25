@@ -175,7 +175,7 @@ func CheckInternalUrls(website string) error {
 	done := make(chan bool)
 	go result(results, done)
 
-	noOfWorkers := 10
+	noOfWorkers := 100
 	createWorkerPool(results, linkToCheck, noOfWorkers)
 
 	<-done
