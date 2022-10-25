@@ -42,8 +42,8 @@ func NewUrlsCheckerAPI(spec *loads.Document) *UrlsCheckerAPI {
 
 		JSONProducer: runtime.JSONProducer(),
 
-		GetCheckWebsiteHandler: GetCheckWebsiteHandlerFunc(func(params GetCheckWebsiteParams) middleware.Responder {
-			return middleware.NotImplemented("operation GetCheckWebsite has not yet been implemented")
+		GetSiteWebsiteReportHandler: GetSiteWebsiteReportHandlerFunc(func(params GetSiteWebsiteReportParams) middleware.Responder {
+			return middleware.NotImplemented("operation GetSiteWebsiteReport has not yet been implemented")
 		}),
 	}
 }
@@ -81,8 +81,8 @@ type UrlsCheckerAPI struct {
 	//   - application/json
 	JSONProducer runtime.Producer
 
-	// GetCheckWebsiteHandler sets the operation handler for the get check website operation
-	GetCheckWebsiteHandler GetCheckWebsiteHandler
+	// GetSiteWebsiteReportHandler sets the operation handler for the get site website report operation
+	GetSiteWebsiteReportHandler GetSiteWebsiteReportHandler
 
 	// ServeError is called when an error is received, there is a default handler
 	// but you can set your own with this
@@ -160,8 +160,8 @@ func (o *UrlsCheckerAPI) Validate() error {
 		unregistered = append(unregistered, "JSONProducer")
 	}
 
-	if o.GetCheckWebsiteHandler == nil {
-		unregistered = append(unregistered, "GetCheckWebsiteHandler")
+	if o.GetSiteWebsiteReportHandler == nil {
+		unregistered = append(unregistered, "GetSiteWebsiteReportHandler")
 	}
 
 	if len(unregistered) > 0 {
@@ -254,7 +254,7 @@ func (o *UrlsCheckerAPI) initHandlerCache() {
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
-	o.handlers["GET"]["/check/{website}"] = NewGetCheckWebsite(o.context, o.GetCheckWebsiteHandler)
+	o.handlers["GET"]["/site/{website}/report"] = NewGetSiteWebsiteReport(o.context, o.GetSiteWebsiteReportHandler)
 }
 
 // Serve creates a http handler to serve the API over HTTP

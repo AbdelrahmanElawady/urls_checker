@@ -20,9 +20,6 @@ type URLStatus struct {
 	// err
 	Err string `json:"err,omitempty"`
 
-	// index
-	Index int64 `json:"index,omitempty"`
-
 	// status
 	Status int64 `json:"status,omitempty"`
 

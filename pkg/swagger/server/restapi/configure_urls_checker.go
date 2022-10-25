@@ -37,9 +37,9 @@ func configureAPI(api *operations.UrlsCheckerAPI) http.Handler {
 
 	api.JSONProducer = runtime.JSONProducer()
 
-	if api.GetCheckWebsiteHandler == nil {
-		api.GetCheckWebsiteHandler = operations.GetCheckWebsiteHandlerFunc(func(params operations.GetCheckWebsiteParams) middleware.Responder {
-			return middleware.NotImplemented("operation operations.GetCheckWebsite has not yet been implemented")
+	if api.GetSiteWebsiteReportHandler == nil {
+		api.GetSiteWebsiteReportHandler = operations.GetSiteWebsiteReportHandlerFunc(func(params operations.GetSiteWebsiteReportParams) middleware.Responder {
+			return middleware.NotImplemented("operation operations.GetSiteWebsiteReport has not yet been implemented")
 		})
 	}
 

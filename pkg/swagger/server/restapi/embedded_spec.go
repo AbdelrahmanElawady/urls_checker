@@ -34,7 +34,7 @@ func init() {
     "version": "0.1.0"
   },
   "paths": {
-    "/check/{website}": {
+    "/site/{website}/report": {
       "get": {
         "description": "Returns the status of links inside the website!",
         "parameters": [
@@ -69,9 +69,6 @@ func init() {
       "properties": {
         "err": {
           "type": "string"
-        },
-        "index": {
-          "type": "integer"
         },
         "status": {
           "type": "integer"
@@ -100,7 +97,7 @@ func init() {
     "version": "0.1.0"
   },
   "paths": {
-    "/check/{website}": {
+    "/site/{website}/report": {
       "get": {
         "description": "Returns the status of links inside the website!",
         "parameters": [
@@ -135,9 +132,6 @@ func init() {
       "properties": {
         "err": {
           "type": "string"
-        },
-        "index": {
-          "type": "integer"
         },
         "status": {
           "type": "integer"

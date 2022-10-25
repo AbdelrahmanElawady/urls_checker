@@ -78,7 +78,7 @@ var linkscheckCmd = &cobra.Command{
 				fmt.Println("error: no url provided")
 				return
 			}
-			_, checkErr := pkg.Check(url)
+			checkErr := pkg.Check(url)
 
 			if checkErr != nil {
 				fmt.Println("error: ", checkErr)

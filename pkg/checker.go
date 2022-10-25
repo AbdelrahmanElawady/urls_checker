@@ -1,9 +1,12 @@
 package pkg
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/fatih/color"
 	"golang.org/x/net/html"
@@ -15,24 +18,29 @@ var (
 	ErrorColor   = color.New(color.FgRed)
 )
 
-/*type URLStatus struct {
-	url    string
-	err    string
-	status int
-}*/
+var links map[string]bool = map[string]bool{}
 
-type URLStatus struct {
-
-	// err
-	Err string `json:"err,omitempty"`
-
-	// status
-	Status int64 `json:"status,omitempty"`
-
-	// url
-	URL string `json:"url,omitempty"`
+type link struct {
+	website string
+	URL     string
 }
 
+type URLStatus struct {
+	Err    string `json:"err,omitempty"`
+	Status int64  `json:"status,omitempty"`
+	URL    string `json:"url,omitempty"`
+}
+
+// Union 2 maps together
+func union(m1, m2 map[string]bool) map[string]bool {
+	for key, val := range m1 {
+		m2[key] = val
+	}
+
+	return m2
+}
+
+// CheckWebsite checks if the website has a prefix https ..?
 func checkWebsite(website string) string {
 	if !strings.HasPrefix(website, "https://") {
 		website = "https://" + website
@@ -41,48 +49,61 @@ func checkWebsite(website string) string {
 	return website
 }
 
-// get links inside a given website
-func GetLinks(website string) ([]string, error) {
-	var links []string
-
-	// check the status of the website before getting its links
-	res, err := http.Get(website)
-	if err != nil {
-		return links, err
-	}
-
-	body := res.Body
-
+// ExtractLinks from a given website
+func ExtractLinks(website string, body io.Reader, linkToCheck chan link) map[string]bool {
 	htmlTokenizer := html.NewTokenizer(body)
 	for {
 		token := htmlTokenizer.Next()
 
 		switch token {
 		case html.ErrorToken:
-			// remove duplicates
-			testDuplicate := make(map[string]bool)
-			uniqueLinks := []string{}
-			for _, item := range links {
-				if _, value := testDuplicate[item]; !value {
-					testDuplicate[item] = true
-					uniqueLinks = append(uniqueLinks, item)
-				}
-			}
-
-			return uniqueLinks, nil
+			close(linkToCheck)
+			return links
 		case html.StartTagToken, html.EndTagToken:
 			token := htmlTokenizer.Token()
 			if "a" == token.Data {
 				for _, attr := range token.Attr {
 					if attr.Key == "href" {
-						links = append(links, attr.Val)
+						if _, ok := links[attr.Val]; !ok {
+							linkToCheck <- link{website, attr.Val}
+							links[attr.Val] = true
+						}
 					}
-
 				}
 			}
-
 		}
 	}
+}
+
+// Get links inside a given website
+func GetLinksOfSource(website string, linkToCheck chan link) error {
+
+	if _, ok := links[website]; ok {
+		//close(linkToCheck)
+		return nil
+	}
+
+	// check the status of the website before getting its links
+	res, err := http.Get(website)
+	if err != nil {
+		close(linkToCheck)
+		ErrorColor.Println("Invalid website", err)
+		return err
+	}
+
+	body := res.Body
+	go ExtractLinks(website, body, linkToCheck)
+	/*
+		for link := range linkToCheck {
+			fmt.Println("rawdahanem", link)
+			if strings.HasPrefix(link.URL, "/") {
+				go GetLinksOfSource(website+link.URL, linkToCheck)
+			} else if !strings.HasPrefix(link.URL, "https://") {
+				go GetLinksOfSource(website+"/"+link.URL, linkToCheck)
+			}
+		}
+	*/
+	return err
 }
 
 // TestLink tests the response of get request
@@ -90,9 +111,13 @@ func GetLinks(website string) ([]string, error) {
 func TestLink(website, url string) (int, error) {
 	if strings.HasPrefix(url, "/") {
 		url = website + url
+	} else if strings.HasPrefix(url, "http://") {
+		return 400, errors.New("url: " + url + " is broken. It starts with http://")
 	} else if !strings.HasPrefix(url, "https://") {
 		url = website + "/" + url
 	}
+
+	CheckInternalUrls(url)
 
 	res, err := http.Get(url)
 	if res == nil {
@@ -101,53 +126,73 @@ func TestLink(website, url string) (int, error) {
 	return res.StatusCode, err
 }
 
-// Checks the urls of a website
-func Check(website string) ([]URLStatus, error) {
-	DebugColor.Println("start checking: ", website)
+// Result of the testing links
+func result(results chan URLStatus, done chan bool) {
+	for result := range results {
+		if result.Err != fmt.Sprint(nil) || result.Status >= 400 {
+			ErrorColor.Println(result.URL, ": ", fmt.Sprint(result.Status))
+			ErrorColor.Println("error: ", fmt.Sprint(result.Err))
+		} else {
+			SuccessColor.Println(result.URL, ": ", fmt.Sprint(result.Status))
+		}
+	}
+	done <- true
+}
 
-	linksStatus := []URLStatus{}
+// The worker tests the extracted links
+func worker(results chan URLStatus, linkToCheck chan link, wg *sync.WaitGroup) {
+	for testLink := range linkToCheck {
+		status, err := TestLink(testLink.website, testLink.URL)
+		results <- URLStatus{fmt.Sprint(err), int64(status), testLink.URL}
+	}
+	wg.Done()
+}
+
+// Creates worker pool
+func createWorkerPool(results chan URLStatus, linkToCheck chan link, noOfWorkers int) {
+	var wg sync.WaitGroup
+	for i := 0; i < noOfWorkers; i++ {
+		wg.Add(1)
+		go worker(results, linkToCheck, &wg)
+	}
+	wg.Wait()
+	close(results)
+}
+
+// Checks the internal urls of a website
+func CheckInternalUrls(website string) error {
+
+	linkToCheck := make(chan link)
+	results := make(chan URLStatus)
 
 	website = checkWebsite(website)
 
-	links, err := GetLinks(website)
-	if err != nil {
-		return linksStatus, err
-	}
-	DebugColor.Println("len(links): ", fmt.Sprint(len(links)))
+	go GetLinksOfSource(website, linkToCheck)
 
-	results := make(chan URLStatus)
+	done := make(chan bool)
+	go result(results, done)
 
-	// initialize routines
-	for j := 0; j < len(links)-1; j++ {
-		go func(index int) {
-			// do processing
-			url := links[index]
-			var status int
-			status, err = TestLink(website, url)
-			results <- URLStatus{fmt.Sprint(err), int64(status), url}
-		}(j)
-	}
+	noOfWorkers := 10
+	createWorkerPool(results, linkToCheck, noOfWorkers)
 
-	DebugColor.Println("Waiting..")
+	<-done
 
-	for j := 0; j < len(links)-1; j++ {
-		r := <-results
-		linksStatus = append(linksStatus, r)
-		if r.Err != fmt.Sprint(nil) || r.Status >= 400 {
-			ErrorColor.Println(r.URL, ": ", fmt.Sprint(r.Status))
-			ErrorColor.Println("error: ", fmt.Sprint(r.Err))
-		} else {
-			SuccessColor.Println(r.URL, ": ", fmt.Sprint(r.Status))
-		}
-	}
-
-	DebugColor.Println("Finished..")
-	return linksStatus, nil
+	return nil
 }
 
-func main() {
+// Checks the urls of a website
+func Check(website string) error {
+	DebugColor.Println("start checking: ", website)
+
+	err := CheckInternalUrls(website)
+
+	DebugColor.Println("Finished..")
+	return err
+}
+
+func checkerMain() {
 	website := "codescalers.com"
-	_, err := Check(website)
+	err := Check(website)
 	if err != nil {
 		fmt.Printf("Checking links of %v failed with error: %v\n", website, err)
 	}
