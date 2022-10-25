@@ -117,12 +117,15 @@ func TestLink(website, url string) (int, error) {
 		url = website + "/" + url
 	}
 
-	CheckInternalUrls(url)
-
 	res, err := http.Get(url)
 	if res == nil {
 		return 404, err
 	}
+
+	if strings.HasPrefix(url, website) && url != website {
+		CheckInternalUrls(url)
+	}
+
 	return res.StatusCode, err
 }
 
