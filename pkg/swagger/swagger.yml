@@ -11,7 +11,7 @@ schemes:
 swagger: "2.0"
 
 paths:
-  /site/{website}/report:
+  /site/:
     get:
       description: Returns the status of links inside the website!
       parameters:
@@ -22,21 +22,5 @@ paths:
           description: The name of the website to check.
       responses:
         200:
-          description: Returns the status of links inside the website.
-          schema:
-            type: array
-            items:
-              $ref: '#/definitions/UrlStatus'
-        400:
-          description: Invalid website was provided.
-
-definitions:
-  UrlStatus:
-    type: object
-    properties:
-      url:
-        type: string
-      err:
-        type: string
-      status:
-        type: integer
+          description: Streams the links of a given website through a websocket
+          
