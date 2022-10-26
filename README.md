@@ -28,17 +28,7 @@ task run.api
 
 ```sh
 cd fronend
-```
-
-##### Project setup
-
-```sh
 npm install
-```
-
-##### Compiles and hot-reloads for development
-
-```sh
 npm run serve
 ```
 
