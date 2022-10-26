@@ -16,7 +16,7 @@ getdeps:
 	@wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.50.1
 
 
-verifiers: fmt lint cyclo spelling staticcheck
+verifiers: fmt lint cyclo deadcode spelling staticcheck
 
 fmt:
 	@echo "Running $@"
@@ -42,13 +42,16 @@ staticcheck:
 
 
 test: verifiers build
-	go test -v ./...
+	go test -v -vet=off ./...
 
 testrace: verifiers build
-	go test -v -race ./...
+	go test -v -race -vet=off ./...
 
-build:
+buildCli:
 	go build -o bin/urls-checker-cli main.go 
 
+buildApi:
+	go build -o bin/urls-checker-cli backend/main.go 
+
 clean:
-	rm ./bin/ -rf
+	rm ./bin/* -rf

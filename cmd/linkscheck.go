@@ -20,10 +20,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/rawdaGastan/urls_checker/internal"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-
-	"github.com/rawdaGastan/urls_checker/pkg"
 )
 
 // linkscheckCmd represents the linkscheck command
@@ -70,6 +69,8 @@ var linkscheckCmd = &cobra.Command{
 			return
 		}
 
+		service := internal.NewCheckerService(100)
+
 		for _, site := range sites {
 			parsed := site.(map[string]interface{})
 			url := parsed["url"].(string)
@@ -78,13 +79,10 @@ var linkscheckCmd = &cobra.Command{
 				fmt.Println("error: no url provided")
 				return
 			}
-			checkErr := pkg.Check(url)
-
-			if checkErr != nil {
-				fmt.Println("error: ", checkErr)
-				return
-			}
+			service.AddSite(url)
 		}
+
+		service.Start()
 	},
 }
 

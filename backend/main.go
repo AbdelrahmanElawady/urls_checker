@@ -3,53 +3,43 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
 
-	"github.com/go-openapi/loads"
-	"github.com/go-openapi/runtime/middleware"
-	"github.com/rawdaGastan/urls_checker/pkg"
-	"github.com/rawdaGastan/urls_checker/pkg/swagger/server/models"
-	"github.com/rawdaGastan/urls_checker/pkg/swagger/server/restapi"
-
-	"github.com/rawdaGastan/urls_checker/pkg/swagger/server/restapi/operations"
+	"github.com/gorilla/websocket"
+	"github.com/rawdaGastan/urls_checker/internal"
 )
 
 func main() {
-
-	// Initialize Swagger
-	swaggerSpec, err := loads.Analyzed(restapi.SwaggerJSON, "")
-	if err != nil {
-		log.Fatalln(err)
+	var upgrader = websocket.Upgrader{}
+	upgrader.CheckOrigin = func(r *http.Request) bool {
+		return true
 	}
 
-	api := operations.NewUrlsCheckerAPI(swaggerSpec)
-	server := restapi.NewServer(api)
+	http.HandleFunc("/site/", func(w http.ResponseWriter, r *http.Request) {
 
-	defer func() {
-		if err := server.Shutdown(); err != nil {
-			// error handle
-			log.Fatalln(err)
+		// Upgrade upgrades the HTTP server connection to the WebSocket protocol.
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			log.Print("upgrade failed: ", err)
+			return
 		}
-	}()
+		defer conn.Close()
 
-	server.Port = 8080
+		// Continuosly read and write message
+		for {
+			_, website, err := conn.ReadMessage()
+			if err != nil {
+				log.Println("read failed:", err)
+				break
+			}
 
-	api.GetSiteWebsiteReportHandler = operations.GetSiteWebsiteReportHandlerFunc(CheckWebsite)
+			service := internal.NewCheckerService(100)
+			service.AddSite(string(website))
+			service.AddSocket(conn)
+			service.Start()
+		}
+	})
 
-	// Start server which listening
-	if err := server.Serve(); err != nil {
-		log.Fatalln(err)
-	}
-}
-
-//CheckWebsite route returns status of the urls of a website
-func CheckWebsite(params operations.GetSiteWebsiteReportParams) middleware.Responder {
-
-	err := pkg.Check(params.Website)
-	if err != nil {
-		fmt.Printf("checking links of %v failed with error: %v\n", params.Website, err)
-	}
-
-	//log.Fatalln(reflect.TypeOf(linksStatus), []*models.URLStatus{})
-	//linksStatus = linksStatus.([]*models.URLStatus)
-	return operations.NewGetSiteWebsiteReportOK().WithPayload([]*models.URLStatus{})
+	fmt.Println("server is running at", 3000)
+	http.ListenAndServe(":3000", nil)
 }

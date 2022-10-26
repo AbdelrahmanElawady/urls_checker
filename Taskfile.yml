@@ -1,6 +1,11 @@
 version: "3"
 
 tasks:
+    test:
+        desc: Test the app
+        cmds:
+        - go test -v -vet=off ./...
+
     build.cli:
         desc: Build the app
         cmds:
@@ -15,9 +20,19 @@ tasks:
         desc: install deps
         cmds: 
         - go get -u golang.org/x/lint/golint
-        - go get  -u github.com/fzipp/gocyclo/cmd/gocyclo
+        - go get -u github.com/fzipp/gocyclo/cmd/gocyclo
         - go get -u github.com/remyoudompheng/go-misc/deadcode
         - go get -u github.com/client9/misspell/cmd/misspell
+
+    verifiers:
+        desc: Run verifiers
+        cmds:
+        - gofmt -d .
+        - $(go env GOPATH)/bin/golangci-lint run
+        - $(go env GOPATH)/bin/gocyclo -over 100 .
+        - $(go env GOPATH)/bin/deadcode -test $(shell go list ./...) || true
+        - $(go env GOPATH)/bin/misspell -i monitord -error `find .`
+        - go run honnef.co/go/tools/cmd/staticcheck -- ./...
 
     run: 
         desc: Run the app
@@ -53,4 +68,4 @@ tasks:
     clean:
         desc: Remove all bin data files
         cmds:
-        - rm ./bin/data -rf
+        - rm ./bin/* -rf

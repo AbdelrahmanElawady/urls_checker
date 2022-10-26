@@ -16,10 +16,36 @@
 
 - Run cmd `./bin/urls-checker-cli linkscheck --config=config.toml`
 
+## How to run the app
+
+### Run backend
+
+```sh
+task run.api
+```
+
+### Run frontend
+
+```sh
+cd fronend
+```
+
+##### Project setup
+
+```sh
+npm install
+```
+
+##### Compiles and hot-reloads for development
+
+```sh
+npm run serve
+```
+
 ## Testing
 
 Use this command to run the tests
 
 ```bash
-go test -v ./...
+task test
 ```
