@@ -150,7 +150,7 @@ export default {
    
  },
  beforeMount(){
-  this.socket = new WebSocket(process.env.VUE_APP_WS + "site/");
+  this.socket = new WebSocket(process.env.VUE_APP_WS + "check");
   this.website = this.$route.query["website"];
   this.socket.onopen = function () {
         console.log("Status: Connected\n");
