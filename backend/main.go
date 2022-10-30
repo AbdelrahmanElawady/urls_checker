@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -23,7 +23,7 @@ var upgrader = websocket.Upgrader{}
 
 func AddSite(w http.ResponseWriter, r *http.Request) {
 	var newSite Site
-	reqBody, err := ioutil.ReadAll(r.Body)
+	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		fmt.Fprintf(w, "Kindly enter data with the site name")
 	}
@@ -36,11 +36,18 @@ func AddSite(w http.ResponseWriter, r *http.Request) {
 	sites = append(sites, newSite)
 	w.WriteHeader(http.StatusCreated)
 
-	json.NewEncoder(w).Encode(newSite)
+	err = json.NewEncoder(w).Encode(newSite)
+	if err != nil {
+		fmt.Fprintf(w, fmt.Sprint(err))
+	}
 }
 
 func getAllSites(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(sites)
+	err := json.NewEncoder(w).Encode(sites)
+
+	if err != nil {
+		fmt.Fprintf(w, fmt.Sprint(err))
+	}
 }
 
 func checkSite(w http.ResponseWriter, r *http.Request) {
@@ -62,7 +69,11 @@ func checkSite(w http.ResponseWriter, r *http.Request) {
 	if !noMatchedSites {
 		service.AddApiOutput()
 		service.Start()
-		json.NewEncoder(w).Encode(service.GetApiOutput())
+
+		err := json.NewEncoder(w).Encode(service.GetApiOutput())
+		if err != nil {
+			fmt.Fprintf(w, fmt.Sprint(err))
+		}
 	} else {
 		fmt.Fprintf(w, "no matched site, please add the site first")
 	}
@@ -76,7 +87,11 @@ func checkAllSites(w http.ResponseWriter, r *http.Request) {
 	}
 	service.AddApiOutput()
 	service.Start()
-	json.NewEncoder(w).Encode(service.GetApiOutput())
+
+	err := json.NewEncoder(w).Encode(service.GetApiOutput())
+	if err != nil {
+		fmt.Fprintf(w, fmt.Sprint(err))
+	}
 }
 
 func checkSiteWithSocket(w http.ResponseWriter, r *http.Request) {
