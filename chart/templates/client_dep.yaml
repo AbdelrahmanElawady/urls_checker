@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vue-deploy
+spec:
+  selector:
+    matchLabels:
+      app: vue
+      tier: frontend
+  template:
+    metadata:
+      name: vue-podd
+      labels:
+        app: vue
+        tier: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: rawdagastan/urlschecker:frontend
+        imagePullPolicy: Always
+        env:
+        - name: VUE_APP_WS
+          value: {{ .Values.backend }}

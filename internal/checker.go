@@ -29,6 +29,7 @@ type CheckerService struct {
 	wg          sync.WaitGroup
 
 	conn   *websocket.Conn
+	apiOut []URLStatus
 	client http.Client
 }
 
@@ -77,6 +78,14 @@ func (c *CheckerService) AddSocket(conn *websocket.Conn) {
 	c.conn = conn
 }
 
+func (c *CheckerService) AddApiOutput() {
+	c.apiOut = []URLStatus{}
+}
+
+func (c *CheckerService) GetApiOutput() []URLStatus {
+	return c.apiOut
+}
+
 // ExtractLinks from a given website
 func (c *CheckerService) extractLinks(website string, body io.Reader) {
 	htmlTokenizer := html.NewTokenizer(body)
@@ -118,8 +127,6 @@ func (c *CheckerService) getLinksOfSource(website string) {
 
 	body := res.Body
 	go c.extractLinks(website, body)
-
-	return
 }
 
 // TestLink tests the response of get request
@@ -150,15 +157,19 @@ func (c *CheckerService) result(done chan bool) {
 	for loop {
 		select {
 		case result := <-c.results:
-			if result.Err != fmt.Sprint(nil) || result.Status >= 400 {
+
+			if c.conn != nil {
+				err := c.conn.WriteJSON(result)
+				if err != nil {
+					ErrorColor.Println("write failed: ", err)
+				}
+			} else if c.apiOut != nil {
+				c.apiOut = append(c.apiOut, result)
+			} else if result.Err != fmt.Sprint(nil) || result.Status >= 400 {
 				ErrorColor.Println(result.URL, ": ", fmt.Sprint(result.Status))
 				ErrorColor.Println("error: ", fmt.Sprint(result.Err))
 			} else {
 				SuccessColor.Println(result.URL, ": ", fmt.Sprint(result.Status))
-			}
-
-			if c.conn != nil {
-				c.conn.WriteJSON(result)
 			}
 
 		case <-time.After(4 * time.Second):

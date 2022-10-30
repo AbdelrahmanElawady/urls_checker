@@ -32,6 +32,26 @@ npm install
 npm run serve
 ```
 
+## Run with docker
+
+```sh
+docker-compose up
+```
+
+## Run with helm
+
+```sh
+helm install urlschecker --debug ./chart 
+
+export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}");
+export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services vue-serv);
+echo http://$NODE_IP:$NODE_PORT
+
+export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}");
+export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services server-serv);
+echo http://$NODE_IP:$NODE_PORT
+```
+
 ## Testing
 
 Use this command to run the tests

@@ -1,0 +1,13 @@
+version: "3.9"
+services:
+  backend:
+    image: "rawdagastan/urlschecker:backend"
+    ports:
+      - "4000:4000"
+
+  frontend:
+    environment:
+      - VUE_APP_WS=ws://localhost:4000/
+    image: "rawdagastan/urlschecker:frontend"
+    ports:
+      - "8080:8080"
