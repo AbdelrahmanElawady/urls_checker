@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: server-deploy
+spec:
+  selector:
+    matchLabels:
+      app: server
+      tier: backend
+  template:
+    metadata:
+      name: server-podd
+      labels:
+        app: server
+        tier: backend
+    spec:
+      containers:
+      - name: backend
+        image: rawdagastan/urlschecker:backend
+        imagePullPolicy: Always

@@ -1,0 +1,6 @@
+[sites]
+   [sites.codescalers]
+     url = "codescalers.com"
+   [sites.threefold]
+     url = "threefold.io"
+   

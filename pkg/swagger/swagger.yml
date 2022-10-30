@@ -1,0 +1,104 @@
+consumes:
+- application/json
+info:
+  description: HTTP server in Go with Swagger endpoints definition.
+  title: urls-checker-api
+  version: 0.1.0
+produces:
+- application/json
+schemes:
+- http
+swagger: "2.0"
+
+paths:
+  /check:
+    get:
+      description: Returns the status of links inside the website sent using a websocket!
+      responses:
+        200:
+          description: Streams the links of a given website through a websocket
+
+  /site:
+    post:
+      description: Adding a new site
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: website
+          description: The website to add.
+          schema:
+            $ref: '#/definitions/Website' 
+      responses:
+        201:
+          description: Added
+          schema:
+            $ref: '#/definitions/Website' 
+
+  /sites:
+    get:
+      description: Get all added sites
+      responses:
+        200:
+          description: Returned sites
+          schema:
+            $ref: '#/definitions/AllWebsites' 
+  
+  /report/{url}:
+    get:
+      description: report all links for an added website
+      parameters:
+        - name: url
+          in: path
+          description: url for the website
+          required: true
+          schema:
+            type: string
+        
+      responses:
+        200:
+          description: Site is reported
+          schema:
+            $ref: '#/definitions/AllSiteStatus' 
+
+  /reports:
+    get:
+      description: report all links for all the added websites
+      responses:
+        200:
+          description: All sites are reported
+          schema:
+            $ref: '#/definitions/AllSiteStatus' 
+
+  
+definitions:
+  AllWebsites:
+    type: array
+    items:
+      $ref: '#/definitions/Website'
+
+  AllSiteStatus:
+    type: array
+    items:
+      $ref: '#/definitions/SiteStatus'
+
+  SiteStatus:
+    type: object
+    properties:
+      err:
+        type: string
+      status:
+        type: integer
+        example: 200
+      url:
+        type: string
+        example: https://threefold.io
+
+  Website:
+    type: object
+    required:
+      - url
+    properties:
+      url:
+        type: string
+        example: https://threefold.io
