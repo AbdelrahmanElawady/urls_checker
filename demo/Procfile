@@ -1,2 +1,2 @@
 backend: GOFLAGS=-mod=mod go run backend/main.go
-frontend: nvm install node && cd frontend && npm install && npm run serve
+frontend: cd frontend && npm install && npm run serve
